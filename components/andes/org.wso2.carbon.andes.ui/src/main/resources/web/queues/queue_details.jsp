@@ -68,9 +68,9 @@
     });</script>
 
     <%
-            } catch (Exception e) {
+            } catch (AndesAdminServiceBrokerManagerAdminException e) {
     %>
-            <script type="text/javascript">CARBON.showInfoDialog('<%=e.getMessage()%>' , function
+            <script type="text/javascript">CARBON.showErrorDialog('<%=e.getFaultMessage().getBrokerManagerAdminException().getErrorMessage()%>' , function
                     () {
                 location.href = 'queue_details.jsp';
             });</script>
