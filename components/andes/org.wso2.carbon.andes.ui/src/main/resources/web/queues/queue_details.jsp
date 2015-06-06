@@ -92,21 +92,20 @@
             try {
                 stub.deleteQueue(queueName);
     %>
-    <script type="text/javascript">CARBON.showInfoDialog('Queue <%=queueName %> successfully deleted.', function
-            () {
-        location.href = 'queue_details.jsp';
-    });</script>
-    <%
-
-    } catch (AxisFault fault) {
-    %>
     <script type="text/javascript">
-//        location.href = 'queue_details.jsp#';
-        CARBON.showErrorDialog('<%=fault.getMessage()%>',function
-                () {
-            location.href = 'queue_details.jsp#';
+
+        CARBON.showInfoDialog('Queue <%=queueName %> successfully deleted.', function() {
+            location.href = 'queue_details.jsp';
         });
     </script>
+    <%
+    } catch (AndesAdminServiceBrokerManagerAdminException e) {
+    %>
+            <script type="text/javascript">
+            CARBON.showErrorDialog('<%=e.getFaultMessage().getBrokerManagerAdminException().getErrorMessage()%>' , function
+                    () {
+                location.href = 'queue_details.jsp#';
+            });</script>
     <%
             }
         }
