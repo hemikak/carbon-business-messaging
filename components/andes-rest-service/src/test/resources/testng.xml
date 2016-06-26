@@ -5,6 +5,7 @@
         <classes>
             <class name="org.wso2.carbon.andes.rest.tests.unit.BrokerDetailsTestCase"/>
             <class name="org.wso2.carbon.andes.rest.tests.unit.MessagesTestCase"/>
+            <!--<class name="org.wso2.carbon.andes.rest.tests.unit.DestinationsTestCase"/>-->
         </classes>
     </test>
 </suite>

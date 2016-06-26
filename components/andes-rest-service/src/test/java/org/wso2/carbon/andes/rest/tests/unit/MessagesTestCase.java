@@ -162,7 +162,7 @@ public class MessagesTestCase {
     }
     
     /**
-     * * Tests that a 200 is received when requested for messages with default query params.
+     * Tests that a 200 is received when requested for messages with default query params.
      *
      * @throws AndesException
      * @throws IOException

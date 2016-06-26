@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import org.wso2.carbon.andes.core.Andes;
 import org.wso2.carbon.andes.core.AndesConstants;
 import org.wso2.carbon.andes.core.AndesException;
+import org.wso2.carbon.andes.core.AndesUtils;
 import org.wso2.carbon.andes.core.DestinationType;
 import org.wso2.carbon.andes.core.ProtocolType;
 import org.wso2.carbon.andes.core.util.DLCQueueUtils;
@@ -70,6 +71,7 @@ import org.wso2.carbon.andes.service.types.BrokerInformation;
 import org.wso2.carbon.andes.service.types.ClusterInformation;
 import org.wso2.carbon.andes.service.types.Destination;
 import org.wso2.carbon.andes.service.types.DestinationRolePermission;
+import org.wso2.carbon.andes.service.types.DestinationsContainer;
 import org.wso2.carbon.andes.service.types.ErrorResponse;
 import org.wso2.carbon.andes.service.types.Message;
 import org.wso2.carbon.andes.service.types.StoreInformation;
@@ -279,7 +281,7 @@ public class AndesRESTService implements Microservice {
             response = Destination.class,
             responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Successful list of destinations.", response = Destination.class),
+            @ApiResponse(code = 200, message = "A containir class .", response = DestinationsContainer.class),
             @ApiResponse(code = 400, message = "Invalid protocol or destination type.", response = ErrorResponse.class),
             @ApiResponse(code = 500, message = "Server Error.", response = ErrorResponse.class)})
     public Response getDestinations(
@@ -295,13 +297,49 @@ public class AndesRESTService implements Microservice {
             @DefaultValue("0") @QueryParam("offset") int offset,
             @ApiParam(value = "The number of destinations to return for pagination.",
                       allowableValues = "range[1, infinity]")
-            @DefaultValue("20") @QueryParam("limit") int limit) {
+            @DefaultValue("20") @QueryParam("limit") int limit,
+            @Context HttpRequest request) throws InternalServerException {
         try {
+            DestinationsContainer destinationsContainer = new DestinationsContainer();
+            // Get total destination count
+            destinationsContainer.setTotalDestinations(destinationManagerService.getDestinations(protocol,
+                                                                    destinationType, destinationName, 0, 1000).size());
+            // Next set calculation
+            if (offset + limit < destinationsContainer.getTotalDestinations()) {
+                destinationsContainer.setNext(request.getUri()
+                        .concat("?name=").concat(destinationName)
+                        .concat("&offset=").concat(Integer.toString(offset + limit))
+                        .concat("&limit=").concat(Integer.toString(limit)));
+            } else {
+                if (destinationsContainer.getTotalDestinations() - offset + limit > 0) {
+                    destinationsContainer.setNext(request.getUri()
+                            .concat("?name=").concat(destinationName)
+                            .concat("&offset=").concat(Integer.toString(offset + limit))
+                            .concat("&limit=").concat(Integer.toString(destinationsContainer.getTotalDestinations()
+                                                                                                    - offset + limit)));
+                }
+            }
+            // Previous set calculation
+            if (offset - limit > 0) {
+                destinationsContainer.setPrevious(request.getUri()
+                        .concat("?name=").concat(destinationName)
+                        .concat("&offset=").concat(Integer.toString(offset - limit))
+                        .concat("&limit=").concat(Integer.toString(limit)));
+            } else {
+                if (offset != 0) {
+                    destinationsContainer.setPrevious(request.getUri()
+                            .concat("?name=").concat(destinationName)
+                            .concat("&offset=0")
+                            .concat("&limit=").concat(Integer.toString(limit)));
+                }
+            }
+
             List<Destination> destinations = destinationManagerService.getDestinations(protocol, destinationType,
                     destinationName, offset, limit);
-            return Response.status(Response.Status.OK).entity(destinations).build();
+            destinationsContainer.setDestinations(destinations);
+            return Response.status(Response.Status.OK).entity(destinationsContainer).build();
         } catch (DestinationManagerException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
+            throw new InternalServerException(e);
         }
     }
 
